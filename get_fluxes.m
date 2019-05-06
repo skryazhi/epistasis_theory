@@ -51,8 +51,13 @@ for irxn = 1:nRxn
         RxnRateString = strrep(RxnRateString, ParamDict.Key{ip}, ParamDict.Value{ip});
     end
 
-    RxnRateString = strrep(RxnRateString, 'extracellular', sprintf('%.3e', mObj.Compartments(1).Capacity));
-    RxnRateString = strrep(RxnRateString, 'cytosol', sprintf('%.3e', mObj.Compartments(2).Capacity));
+    if length(mObj.Compartments) == 2
+        RxnRateString = strrep(RxnRateString, 'extracellular', sprintf('%.3e', mObj.Compartments(1).Capacity));
+        RxnRateString = strrep(RxnRateString, 'cytosol', sprintf('%.3e', mObj.Compartments(2).Capacity));
+    elseif length(mObj.Compartments) == 1
+        RxnRateString = strrep(RxnRateString, 'cytosol', sprintf('%.3e', mObj.Compartments(1).Capacity));
+    end
+        
             
     rxn.Flux(irxn) = eval( RxnRateString );
     
@@ -65,68 +70,40 @@ for irxn = 1:nRxn
 end
 
 %% Checking that the fluxes actually balance for each metabolite:
-% pep
-isp = 2;
-species_rxn.plus{isp} = [18]; species_rxn.minus{isp} = [1 19 20 21 23 39];
-% g6p
-isp = 3;
-species_rxn.plus{isp} = [1]; species_rxn.minus{isp} = [2 3 4 31];
-% pyr
-isp = 4;
-species_rxn.plus{isp} = [1 13 19 25]; species_rxn.minus{isp} = [22 24 44];
-% f6p
-isp = 5;
-species_rxn.plus{isp} = [2 6 8]; species_rxn.minus{isp} = [5 9 32]; % MurSynt (Rxn #9) has stoichiometry coefficient 2!
-% g1p
-isp = 6;
-species_rxn.plus{isp} = [3]; species_rxn.minus{isp} = [30 47];
-% 6pg
-isp = 7;
-species_rxn.plus{isp} = [4]; species_rxn.minus{isp} = [26 45];
-% fdp
-isp = 8;
-species_rxn.plus{isp} = [5]; species_rxn.minus{isp} = [10 33];
-% s7p
-isp = 9;
-species_rxn.plus{isp} = [7]; species_rxn.minus{isp} = [6 43];
-% gap
-isp = 10;
-species_rxn.plus{isp} = [7 8 10 12 13]; species_rxn.minus{isp} = [6 11 34];
-% e4p
-isp = 11;
-species_rxn.plus{isp} = [6]; species_rxn.minus{isp} = [8 23 46];
-% xyl5p
-isp = 12;
-species_rxn.plus{isp} = [28]; species_rxn.minus{isp} = [7 8 42];
-% rib5p
-isp = 13;
-species_rxn.plus{isp} = [27]; species_rxn.minus{isp} = [7 29 41];
-% dhap
-isp = 14;
-species_rxn.plus{isp} = [10]; species_rxn.minus{isp} = [12 14 35];
-% pgp
-isp = 15;
-species_rxn.plus{isp} = [11]; species_rxn.minus{isp} = [15 36];
-% 3pg
-isp = 16;
-species_rxn.plus{isp} = [15]; species_rxn.minus{isp} = [16 17 37];
-% 2pg
-isp = 17;
-species_rxn.plus{isp} = [17]; species_rxn.minus{isp} = [18 38];
-% ribu5p
-isp = 18;
-species_rxn.plus{isp} = [26]; species_rxn.minus{isp} = [27 28 40];
-
-for isp = 2:length(mObj.Species)
-    x = sum( rxn.Flux( species_rxn.plus{isp} ) ) - sum( rxn.Flux( species_rxn.minus{isp} ) );
-    if isp == 5
-        x = x - rxn.Flux(9);
+for isp = 1:length(mObj.Species)
+    spName = get(mObj.Species(isp), 'Name');
+    
+    % Find rxns in which this species participates as a substrate:
+    substrList = [];
+    for irxn = 1:length(mObj.Reactions)
+        for isubstr = 1:length(mObj.Reactions(irxn).Reactants)
+            if strcmp( get(mObj.Reactions(irxn).Reactants(isubstr), 'Name'), spName )
+               substrList = [substrList irxn];
+               break;
+            end
+        end
     end
+    
+    % Find rxns in which this species participates as a product:
+    prodList = [];
+    for irxn = 1:length(mObj.Reactions)
+        for iprod = 1:length(mObj.Reactions(irxn).Products)
+            if strcmp( get(mObj.Reactions(irxn).Products(iprod), 'Name'), spName )
+                prodList = [prodList irxn];
+                break;
+            end
+        end
+    end
+    
+    x = sum( rxn.Flux( prodList  ) ) - sum( rxn.Flux( substrList ) );
+
     if IFVERBOSE
         fprintf('Species #%d (%s) derivative = %.3g\n', isp, get(mObj.Species(isp), 'Name'), x );
     end
 end
-clear isp x;
+
+
+
 
 
 
@@ -151,10 +128,10 @@ for isp = 1:nObj
         else
             dict.Key{isp} = sprintf('%s.[%s]', CurrObj.Parent.Name, CurrObj.Name);
         end
-        dict.Value{isp} = sprintf('%.6e', CurrObj.InitialAmount);
+        dict.Value{isp} = sprintf('%.16e', CurrObj.InitialAmount);
     elseif strcmp(CurrObj.Type, 'parameter')
         dict.Key{isp} = sprintf('%s', CurrObj.Name);
-        dict.Value{isp} = sprintf('%.6e', CurrObj.Value);
+        dict.Value{isp} = sprintf('%.16e', CurrObj.Value);
     end
 end
 [tmp, ix] = sort( cellfun(@length, dict.Key), 'descend' );
