@@ -28,7 +28,7 @@ function [ModelL, FluxDistrL] = getMutFlux(OrigModelObj, mutList)
 warning('off', 'all');
 
 if nargin < 2 || isempty(mutList)
-    [success, variant_out, ModelL] = sbiosteadystate(OrigModelObj, 'MaxStopTime', 1e7, 'RelTol', 1e-7, 'AbsTol', 1e-9);
+    [success, variant_out, ModelL] = sbiosteadystate(OrigModelObj, 'MaxStopTime', 1e7, 'RelTol', 1e-8, 'AbsTol', 1e-10);
     if ~success
         fprintf('Failed to converge to steady state!\n');
     end
@@ -45,7 +45,7 @@ FluxDistrL = cell( nMut, 1);
 
 for imut = 1:nMut
     
-    fprintf('Mut #%d out of %d (%.1f%%)\n', imut, nMut, imut/nMut*100 );
+    % fprintf('Mut #%d out of %d (%.1f%%)\n', imut, nMut, imut/nMut*100 );
     
     % which reactions/parameters are affected in this mutant?
     EnzList = mutList{imut,1};
@@ -66,7 +66,7 @@ for imut = 1:nMut
 %             PertList(iEnz) );
     end
     
-    [success, variant_out,  ModelL{imut}] = sbiosteadystate(MutModelObj, 'MaxStopTime', 1e7, 'RelTol', 1e-7, 'AbsTol', 1e-9);
+    [success, variant_out,  ModelL{imut}] = sbiosteadystate(MutModelObj, 'MaxStopTime', 1e7, 'RelTol', 1e-8, 'AbsTol', 1e-10);
     if ~success
         fprintf('Failed to converge to steady state!\n');
     end

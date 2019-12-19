@@ -3,17 +3,19 @@
 clear;
 
 currdir = '/Users/skryazhi/epistasis_theory/data/Chassagnole_etal';
-runId = '2019-05-02';
+runId = '2019-12-12';
 
 Pert = 0.9;
 Glu = 'Low'; % 'Low' 'Med' or 'Inf';
-ModelSpecs.Type = 'GPPP';
+
+ModelSpecs.Type = 'UGPPP';
 % LG = lower glycolysis
 % PPPSMALL = G6PDH and PGDH:    
 % PPP = pentose phosphate pathway
 % UGPPP = upper glycolysis and pentose phosphate pathway
 % GPPP = upper and lower glycolysis and pentose phosphate pathway
 % FULL = full model (w/o g1p and extreneous rxns)
+
 
 AbsTolMut = 1e-4;
 AbsTolEps = 1e-6;
@@ -49,7 +51,7 @@ EnzNames = struct(... %%%% Upper glycolysis:
     'PTS', 'Phosphotransferase system', ...
     'PK', 'Pyruvate kinase');
 
-% Cext = Inf:
+% === Glu = Inf steady-state concentrations ===
 % 1         cytosol         Phosphoenol pyruvate          2.15868
 % 2         cytosol         Glucose-6-Phosphate           3.7979
 % 3         cytosol         Pyruvate                      2.67
@@ -67,7 +69,7 @@ EnzNames = struct(... %%%% Upper glycolysis:
 % 15        cytosol         2-Phosphoglycerate            0.325327
 % 16        cytosol         Ribulose-5-phosphate          0.140996
 
-% Cext = 10:
+% === Glu = Med steady-state concentrations ===
 % 1         extracellular    Extracellular Glucose         10
 % 2         cytosol          Phosphoenol pyruvate          3.51196
 % 3         cytosol          Glucose-6-Phosphate           4.04183
@@ -86,7 +88,7 @@ EnzNames = struct(... %%%% Upper glycolysis:
 % 16        cytosol          2-Phosphoglycerate            0.525739
 % 17        cytosol          Ribulose-5-phosphate          0.140553
 
-% Cext = 5:
+% === Glu = Low steady-state concentrations ===
 %    1         extracellular    Extracellular Glucose         5.02              
 %    2         cytosol          Phosphoenol pyruvate          3.88449           
 %    3         cytosol          Glucose-6-Phosphate           3.96602           
@@ -546,6 +548,11 @@ WT.OutFlux = sum( ModelSpecs.rxnOutEnzymeCoeff .* WT.FluxDistr.Flux(rxnOutIdVec)
 WT.m.Species
 WT.FluxDistr.Flux
 
+
+%% Calculate control coefficients for all rxns:
+
+WT.CtrlCoeff = getCtrlCoeff( WT.m, ModelSpecs, rxnOutIdVec, WT.OutFlux)
+
 %% Single mutants calculation:
 
 FullEnzNames = get_full_names(EnzNames, mutList(:,1));
@@ -642,7 +649,7 @@ clear i2Mut iMut1 iMut2 iPert rxnId delta1 delta2 eps
 
 
 %% Saving
-filename =  sprintf('%s/data %s/%s/data %s', currdir, runId, Glu, ModelSpecs.Type);
+filename =  sprintf('%s/%s/data/%s/%s', currdir, runId, Glu, ModelSpecs.Type);
 
 for met = fieldnames(ModelSpecs.ExtMetConc)'
     filename = sprintf('%s, [%s] = %.2f', filename, met{1}, ModelSpecs.ExtMetConc.(met{1}));
@@ -782,7 +789,7 @@ xtickangle(90);
 clear fdim cc hpos hneg iMut1 iMut2 c pos;
 
 %% Saving
-filename =  sprintf('%s/figures_%s/eps/%s/%s', currdir, runId, Glu, ModelSpecs.Type);
+filename =  sprintf('%s/%s/figures/eps/%s/%s', currdir, runId, Glu, ModelSpecs.Type);
 
 for met = fieldnames(ModelSpecs.ExtMetConc)'
     filename = sprintf('%s, [%s] = %.2f', filename, met{1}, ModelSpecs.ExtMetConc.(met{1}));
