@@ -46,12 +46,13 @@ for irxn = 1:nRxn
     end
     
     clf; hold on; box on;
-    plot( PertVec-1, FluxVec/OrigOutFlux-1, 'ok');
     b = regress(FluxVec/OrigOutFlux-1, [(PertVec-1) , (PertVec-1).^2] );
+
+    plot( PertVec-1, FluxVec/OrigOutFlux-1, 'ok');
     plot( PertVec-1, b(1)*(PertVec-1) + b(2)*(PertVec-1).^2, 'k-', 'LineWidth', 2);
     
     if abs(b(1)) > AbsTolCC
         CtrlCoeffs(irxn) = b(1);
     end
-    fprintf('FCC of %s = %.2f%%:\n', CurrRxnName, CtrlCoeffs(irxn)*100);
+    fprintf('FCC of %s = %.2f%%\n', CurrRxnName, CtrlCoeffs(irxn)*100);
 end

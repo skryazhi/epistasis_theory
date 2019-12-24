@@ -27,12 +27,17 @@ function [ModelL, FluxDistrL] = getMutFlux(OrigModelObj, mutList)
 
 warning('off', 'all');
 
+RelTol = 1e-8;
+AbsTol = 1e-10;
+MaxStop = 1e7; 
+
 if nargin < 2 || isempty(mutList)
-    [success, variant_out, ModelL] = sbiosteadystate(OrigModelObj, 'MaxStopTime', 1e7, 'RelTol', 1e-8, 'AbsTol', 1e-10);
+    [success, variant_out, ModelL] = sbiosteadystate(OrigModelObj,...
+        'MaxStopTime', MaxStop, 'RelTol', RelTol, 'AbsTol', AbsTol);
     if ~success
         fprintf('Failed to converge to steady state!\n');
     end
-    FluxDistrL = get_fluxes(ModelL, 'v');
+    FluxDistrL = get_fluxes(ModelL);
     return;
 end
 
@@ -66,7 +71,8 @@ for imut = 1:nMut
 %             PertList(iEnz) );
     end
     
-    [success, variant_out,  ModelL{imut}] = sbiosteadystate(MutModelObj, 'MaxStopTime', 1e7, 'RelTol', 1e-8, 'AbsTol', 1e-10);
+    [success, variant_out,  ModelL{imut}] = sbiosteadystate(MutModelObj,...
+        'MaxStopTime', MaxStop, 'RelTol', RelTol, 'AbsTol', AbsTol);
     if ~success
         fprintf('Failed to converge to steady state!\n');
     end
