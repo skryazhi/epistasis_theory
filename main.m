@@ -1,5 +1,5 @@
 curr_dir = '/Users/skryazhi/epistasis_theory/data/Chassagnole_etal';
-runId = '2019-12-20';
+runId = '2019-12-24';
 
 Glu = 'Low'; % 'Low' 'Med' or 'Inf';
 
@@ -7,237 +7,269 @@ IFINIT = false; % initialize models or load previously initialized?
 % Should always re-initialized if something changes in the definition of
 % any model
 
+ModuleList = {'FULL', 'UGPP', 'GPP', 'LG'};
 
-MetNames = struct(...
-    'g6p', 'Glucose-6-Phosphate', ...
-    'f6p', 'Fructose-6-Phosphate', ...
-    'gap', 'Glyceraldehyde-3-Phosphate', ...
-    'pep','Phosphoenol pyruvate', ...
-    'ribu5p', 'Ribulose-5-phosphate', ...
-    'glu', 'Extracellular Glucose',...
-    'pyr', 'Pyruvate',...
-    'g1p', 'Glucose-1-Phosphate',...
-    'threepg', '3-Phosphoglycerate', ...
-    'pgp', '1,3-diphosphosphoglycerate');
+data_dir = sprintf('%s/%s/data [Glu] = %s', curr_dir, runId, Glu); 
+fig_dir = sprintf('%s/%s/figures [Glu] = %s', curr_dir, runId, Glu); 
 
-EnzNames = struct(... %%%% Upper glycolysis:
-    'PTS', 'Phosphotransferase system', ...
-    'PGI', 'Glucose-6-phosphate isomerase',... 
-    'PFK', 'Phosphofructokinase', ...
-    'ALDO', 'Aldolase', ... %%% Lower glycolysis:
-    'TIS', 'Triosephosphate isomerase', ...
-    'GAPDH', 'Glyceraldehyde-3-phosphate dehydrogenase', ...
-    'PGK', 'Phosphoglycerate kinase', ...
-    'PGluMu', 'Phosphoglycerate mutase', ...
-    'ENO', 'Enolase', ... %%% PPP:
-    'G6PDH', 'Glucose-6-phosphate dehydrogenase', ...
-    'PGDH', '6-Phosphogluconate dehydrogenase', ...
-    'R5PI', 'Ribose-phosphate isomerase', ...
-    'Ru5P', 'Ribulose-phosphate epimerase', ...
-    'TKa', 'Transketolase a', ...
-    'TA', 'Transaldolase', ...
-    'TKb', 'Transketolase b', ...
-    'PK', 'Pyruvate kinase',...
-    'PEPCxylase', 'PEP carboxylase');
+modelfile = sprintf('%s/BIOMD0000000051.xml', curr_dir);
+
+%% Initializing
+
+for iMod = 1:length(ModuleList)
+    ModelName = ModuleList{iMod};
+    filename = sprintf('%s/model_%s_%s.mat', data_dir, ModelName, Glu);
+    
+    if exist(filename, 'file') == 0 || IFINIT
+        fprintf('Initializing %s model\n', ModelName);
+        [WT, ModelSpecs] = initialize_model(modelfile, data_dir, ModelName, Glu);
+    end
+end
 
 
 
-%% Plot the distribution of FCCs in the full model
-filename = sprintf('%s/model_FULL_%s.mat', curr_dir, Glu);
-if exist(filename, 'file') == 0 || IFINIT
-    fprintf('Initializing FULL model\n');
-    [WT, ModelSpecs] = initialize_model(curr_dir, Glu, ModelSpecs, MetNames, EnzNames);
-else
+%% Plot the figure for main text (selected rxns)
+
+Glu = 'Low';
+RxnList = {'PGI', 'PGDH', 'PFK'};
+ModuleList = {'UGPP'; 'GPP'; 'FULL'};
+
+nMod = length(ModuleList);
+nRxn = length(RxnList);
+nEps = nRxn * (nRxn - 1)/2;
+
+FCC = nan( nMod, nRxn );
+EPS = nan( nMod, nEps );
+
+for iMod = 1:nMod
+    ModelName = ModuleList{iMod};
+    filename = sprintf('%s/model_%s_%s.mat', data_dir, ModelName, Glu);
     load( filename );
-end
-
-WT.FluxDistr.ShortName = cell(length(WT.FluxDistr.Name),1);
-ShortNameList = fieldnames( EnzNames );
-for irxn = 1:length(ShortNameList)
-    ShortName = ShortNameList{irxn};
-    LongName = EnzNames.( ShortName );
-    ix = find( strcmp(WT.FluxDistr.Name, LongName) );
-    if ~isempty(ix) 
-        WT.FluxDistr.ShortName{ix} = ShortName;
-    end
-end
-clear ShortNameList ShortName LongName ix irxn;
-
-bar(WT.FluxDistr.CtrlCoeff);
-set(gca, 'XTick', 1:length(WT.FluxDistr.CtrlCoeff) ,'XTickLabel', WT.FluxDistr.ShortName);
-xtickangle(30);
-title(sprintf('FULL [Glu] = %s', Glu), 'FontName', 'Helvetica', 'FontSize', 16);
-filename =  sprintf('%s/%s/figures [Glu] = %s/eps/FCC Distr.eps', curr_dir, runId, Glu);
-saveas(gcf, filename, 'epsc');
-
-
-%% Calculate epistasis cofficients
- 
-Pert = 0.9;
-AbsTolEps = 1e-6;
-
-
-% e1 = 'PGI';
-% e2 = 'PGDH'; %'TIS'; % 'ALDO'; %'PFK';
-% ModuleList = {'UGPPP' ; 'GPPP' ; 'FULL'};
-
-
-e1 = 'PGDH';
-e2 = 'PFK'; %  'ALDO'; %'TIS';
-ModuleList = {'UGPPP' ; 'GPPP' ; 'FULL'};
-
-
-% e1 = 'GAPDH';
-% e2 = 'ENO'; % 'PGK', 'PGluMu'
-% ModuleList = {'LG' ; 'GPPP' ; 'FULL'};
-
-% e1 = 'PGDH'; %'ALDO'; %'PFK'; %'PGI'; 
-% e2 = 'GAPDH';
-% ModuleList = {'GPPP' ; 'FULL'};
-
-
-nModule = length(ModuleList);
-DeltaEpsMat = nan( nModule, 3);
-
-% LG = lower glycolysis
-% PPPSMALL = G6PDH and PGDH:    
-% PPP = pentose phosphate pathway
-% UGPPP = upper glycolysis and pentose phosphate pathway
-% GPPP = upper and lower glycolysis and pentose phosphate pathway
-% FULL = full model (w/o g1p and extreneous rxns)
-
-for iModule = 1:nModule
-
-    clear ModelSpecs WT mutList nMut FullEnzNames RxnNames rxnOutIdVec;
-    
-    ModelSpecs.Type = ModuleList{iModule};
-
-    if IFINIT
-        [WT, ModelSpecs] = initialize_model(curr_dir, Glu, ModelSpecs, MetNames, EnzNames);
-    else
-        load( sprintf('%s/model_%s_%s.mat', curr_dir, ModelSpecs.Type, Glu) );
-    end
-    
-    RxnNames = get(WT.m.Reactions, 'Name');
-    rxnOutIdVec = cellfun(@(EnzShortName) find(strcmp(RxnNames,EnzNames.(EnzShortName))) ,ModelSpecs.rxnOutEnzymes);
-
-    %% Single mutants calculation:
-    mutList = [ ...
-        {{e1}, Pert};
-        {{e2}, Pert};
-        ];
-    
-    
-    FullEnzNames = get_full_names(EnzNames, mutList(:,1));
-    [ModelL, FluxDistrL] = getMutFlux(WT.m, [FullEnzNames, mutList(:,2)]);
-    mutList = [mutList, ModelL, FluxDistrL];
-    % Col 1 = enzyme short name list
-    % Col 2 = perturbation list
-    % Col 3 = perturbed model
-    % Col 4 = perturbed steady state fluxes
-    % Col 5 = perturbed steady state output flux
-    % Col 6 = relative perturbation of output flux
-
-    
-    nMut = 2;
-    
-    %% Single mutants output:
-    fprintf('WT:\nfOUT = %.3f \n', WT.OutFlux);
-    
-    for iMut = 1:nMut
-        mutList{iMut, 5} = sum( ModelSpecs.rxnOutEnzymeCoeff .* mutList{iMut,4}.Flux(rxnOutIdVec) );
-        mutList{iMut, 6} = (mutList{iMut, 5} - WT.OutFlux)/WT.OutFlux;
         
-        DeltaEpsMat(iModule, iMut) = mutList{iMut, 6};
+    for irxn = 1:length(RxnList)
+        ix = find( strcmp( WT.FluxDistr.Name, get_full_name( ModelSpecs.EnzNames , RxnList{ irxn }) ) );
+        FCC( iMod, irxn ) = WT.FluxDistr.FCC( ix );
+    end
+    
+    ieps = 1;
+    for irxn1 = 1:length(RxnList)-1
+        ix1 = find( strcmp( WT.FluxDistr.Name, get_full_name( ModelSpecs.EnzNames , RxnList{ irxn1 }) ) );
         
-        fprintf('\\delta %s = %.3g\n\f=> fOUT = %.3f\n\t=> \\delta f = %.2e\n',...
-            mutList{iMut, 1}{1}, mutList{iMut, 2}, ...
-            mutList{iMut, 5},...
-            mutList{iMut, 6} );
-    end
-    
-    
-    %% Double mutants
-    
-    mut2List = cell(1, 8);
-    
-    mut2List{1,1} = [mutList{1,1}; mutList{2,1}];
-    mut2List{1,2} = [mutList{1,2}; mutList{2,2}];
-    mut2List{1,7} = [1; 2];
-    
-    FullEnzNames = get_full_names(EnzNames, mut2List(:,1));
-    [ModelL, FluxDistrL] = getMutFlux(WT.m, [FullEnzNames, mut2List(:,2)]);
-    mut2List(:,3:4) = [ModelL, FluxDistrL];
-    % Col 1 = enzyme short name list
-    % Col 2 = perturbation list
-    % Col 3 = perturbed model
-    % Col 4 = perturbed steady state fluxes
-    % Col 5 = perturbed steady state output flux
-    % Col 6 = relative perturbation of output flux
-    % Col 7 = indices of perturbed enzymes in mutList
-    % Col 8 = epsilon
-    
-    
-    %%% Calculate epistasis coeff:
-    mut2List{1, 5} = sum( ModelSpecs.rxnOutEnzymeCoeff .* mut2List{1,4}.Flux(rxnOutIdVec) );
-    mut2List{1, 6} = (mut2List{1, 5} - WT.OutFlux)/WT.OutFlux;
-    
-    fprintf('\\delta %s = %.3g, \\delta %s = %.3g\n\t=> fOUT = %.3f\n\t=> \\delta f = %.4g\n',...
-        mut2List{1, 1}{1}, mut2List{1, 2}(1), ...
-        mut2List{1, 1}{2}, mut2List{1, 2}(2), ...
-        mut2List{1, 5},...
-        mut2List{1, 6} );
-    
-    iMut1 = mut2List{1,7}(1);
-    iMut2 = mut2List{1,7}(2);
-    
-    delta1 = mutList{iMut1,6};
-    delta2 = mutList{iMut2,6};
-    
-    eps = mut2List{1, 6} - delta1 - delta2;
-    if abs(delta1) < AbsTolEps || abs(delta2) < AbsTolEps || abs(mut2List{1, 6}) < AbsTolEps % || ...
-            % abs(-1-delta1) < AbsTolEps || abs(-1-delta2) < AbsTolEps || abs(-1-mut2List{1, 6}) < AbsTolEps
-        eps = nan;
-    elseif abs(eps) < AbsTolEps
-        eps = 0;
-    else
-        eps = eps/delta1/delta2;
-    end
-    mut2List{1,8} = eps;
-    
-    DeltaEpsMat(iModule, 3) = eps;
-    
-    fprintf('\t eps f = %.3g\n', eps);
-    
-    clear iMut1 iMut2 rxnId delta1 delta2 eps;
-    
-    %% Saving
-    filename =  sprintf('%s/%s/data [Glu] = %s/%s %s Pert = %.1f %s.mat', curr_dir, runId, Glu, e1, e2, Pert, ModelSpecs.Type);
-    save(filename, 'ModelSpecs', 'WT', 'mutList', 'mut2List');
+        for irxn2 = irxn1+1:length(RxnList)
+            ix2 = find( strcmp( WT.FluxDistr.Name, get_full_name( ModelSpecs.EnzNames , RxnList{ irxn2 }) ) );
+            EPS( iMod, ieps ) = WT.FluxDistr.FIC( ix1, ix2 ) / FCC( iMod, irxn1 ) / FCC( iMod, irxn2 );
+            ieps = ieps + 1;
+        end 
+    end    
 end
+clear iMod irxn ix irxn1 irx1 irxn2 ix2 ieps WT ModelSpecs;
 
-filename =  sprintf('%s/%s/data [Glu] = %s/%s %s Pert = %.1f.mat', curr_dir, runId, Glu, e1, e2, Pert);
-save(filename, 'ModelSpecs', 'WT', 'DeltaEpsMat');
-
-
-%% Visualize epistasis
 clf;
 
 %%% Specify the following dimensions:
-fdim.spwa = 8; % subplotwidth in cm
-fdim.spha = 8; % subplotheight in cm
+fdim.spwa = 6; % subplotwidth in cm
+fdim.spha = [3.5 2 2 2]; % subplotheight in cm
 
 fdim.nx = 1; % number of panels along the horizontal dimension
-fdim.ny = 2; % number of panels along the vertical dimension
+fdim.ny = nEps+1; % number of panels along the vertical dimension
 
-fdim.xma = [1.5 0.5]; % left right horizontal margin in cm
-fdim.yma = [1.3 1]; % bottom top vertical margin cm
+fdim.xma = [1.2 0.2]; % left right horizontal margin in cm
+fdim.yma = [1.1 0.2]; % bottom top vertical margin cm
 
 fdim.dxa = 0.3; % horizontal distance between panels in cm
-fdim.dya = 0.6; % vertical distance between panels in cm
+fdim.dya = [1.5 0.2 0.2]; % vertical distance between panels in cm
 
-fdim.tickfs = 10;
-fdim.labelfs = 14;
+fdim.tickfs = 8;
+fdim.labelfs = 12;
+
+%%% These will be computed automatically:
+fdim.fw = fdim.spwa * fdim.nx + fdim.dxa * (fdim.nx - 1) + sum(fdim.xma);
+fdim.fh = sum(fdim.spha) + sum(fdim.dya) + sum(fdim.yma);
+
+fdim.spwr = fdim.spwa / fdim.fw;
+fdim.sphr = fdim.spha / fdim.fh;
+fdim.xmr = fdim.xma / fdim.fw;
+fdim.ymr = fdim.yma / fdim.fh;
+fdim.dxr = fdim.dxa / fdim.fw;
+fdim.dyr = fdim.dya / fdim.fh;
+
+set(gcf, 'Units', 'centimeters');
+set(gcf, 'Position', [0 0 fdim.fw fdim.fh]);
+
+fdim.spxvec = fdim.xmr(1) + fdim.spwr * ( 0:(fdim.nx-1) ) + fdim.dxr * ( 0:(fdim.nx-1) );
+tmp = cumsum(fliplr([fdim.sphr 0]));
+tmp = tmp(1:end-1) + cumsum(fliplr([fdim.dyr 0]));
+fdim.spyvec = fdim.ymr(1) + fliplr(tmp);
+
+fdim.minx = 1 - 0.2;
+fdim.maxx = nMod + 1 - fdim.minx;
+
+subplot('Position', [fdim.spxvec(1) fdim.spyvec(1) fdim.spwr fdim.sphr(1)]),
+hold on, box on;
+set(gca, 'FontName', 'Helvetica', 'FontSize', fdim.tickfs, 'Layer', 'top');
+
+%%% Plot FCC:
+% cc = repmat(linspace(0.3, 0.7, nRxn)', 1, 3);
+cc = [
+    0, 114, 178;    % blue
+    213, 94, 0;     % vermillion
+    204, 121, 167;   % raddish purple
+    86, 180, 233;   % sky blue
+    230 159, 0;     % orange
+    0, 158, 115;    % bluish green
+    240, 228, 66   % yellow
+    ]./256;
+
+for iRxn = 1:nRxn
+    plot( (1:nMod)' , FCC(:,iRxn), '-', 'LineWidth', 2, 'Color', cc(iRxn, :));
+    plot( (1:nMod)' , FCC(:,iRxn), 'o', 'LineWidth', 1, ...
+        'MarkerFaceColor', cc(iRxn, :), 'MarkerEdgeColor', 'w', 'MarkerSize', 10);
+end
+
+set(gca, 'XLim', [fdim.minx fdim.maxx], 'XTick', 1:nMod);
+set(gca, 'XTickLabel', ModuleList );
+set(gca, 'YLim', [-0.1, 1.1], 'YTick', [0 1], 'YGrid', 'on');
+ylabel('FCC', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs,...
+    'Position', [0.53, 0.5]);
+xlabel('Module', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs,...
+    'Position', [2, -0.27]);
+text(1.08, 0.17, RxnList{1}, 'Color', cc(1,:), 'VerticalAlignment', 'bottom');
+text(1.08, 0.08, RxnList{2}, 'Color', cc(2,:), 'VerticalAlignment', 'top');
+text(1.08, 0.83, RxnList{3}, 'Color', cc(3,:), 'VerticalAlignment', 'top');
+clear iRxn cc;
+
+
+
+
+%%% Plot eps
+for iEps = 1:nEps
+    subplot('Position', [fdim.spxvec(1) fdim.spyvec(1+iEps) fdim.spwr fdim.sphr(iEps+1)]),
+    hold on, box on;
+    set(gca, 'FontName', 'Helvetica', 'FontSize', fdim.tickfs, 'Layer', 'top');
+        
+    plot( (1:nMod)' , EPS(:,iEps), '-', 'LineWidth', 2, 'Color', 'k');
+    plot( (1:nMod)' , EPS(:,iEps), 'o', 'LineWidth', 1, ...
+        'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'w', 'MarkerSize', 10);
+    
+    set(gca, 'XLim', [fdim.minx fdim.maxx], 'XTick', 1:nMod, 'XTickLabel', {});
+    
+    set(gca, 'YGrid', 'on');
+    
+    if iEps == 1
+        set(gca, 'YLim', [-65, 5], 'YTick', [-60 0]);
+        text(3.18, -1, sprintf('%s-%s', RxnList{1}, RxnList{2}),...
+            'Color', 'k', 'VerticalAlignment', 'top', 'HorizontalAlignment', 'right');
+    elseif iEps == 2
+        set(gca, 'YLim', [-0.5, 2.2], 'YTick', [0 2]);
+        ylabel('Epistasis for flux', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs, ...
+            'Position', [0.53, 0.85]);
+        text(3.18, 1.97, sprintf('%s-%s', RxnList{1}, RxnList{3}),...
+            'Color', 'k', 'VerticalAlignment', 'top', 'HorizontalAlignment', 'right');        
+    elseif iEps == 3
+        set(gca, 'YLim', [-0.7, 2.2], 'YTick', [0 2]);
+        set(gca, 'XTickLabel', ModuleList );
+        xlabel('Module', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs,...
+            'Position', [2, -1.4]);
+        text(3.18, 1.97, sprintf('%s-%s', RxnList{2}, RxnList{3}),...
+            'Color', 'k', 'VerticalAlignment', 'top', 'HorizontalAlignment', 'right');        
+    end    
+end
+
+filename =  sprintf('%s/eps/FCC EPI [Glu]=%s.eps', fig_dir, Glu);
+saveas(gcf, filename, 'epsc');
+
+
+
+
+%% Plot the figure for the supplementary material (all Rxns)
+
+Glu = 'Low'; % 'Inf';
+AbsTol = 1e-4;
+ModuleList = {'LG'; 'UGPP'; 'GPP'; 'FULL'};
+nMod = length(ModuleList);
+
+%%% Specify RxnList explicitly:
+RxnList = {...
+    'PGI','Glucose-6-phosphate isomerase';
+    'PGDH','6-Phosphogluconate dehydrogenase'
+    'PFK','Phosphofructokinase';
+    'ALDO','Aldolase';
+    'TIS','Triosephosphate isomerase';    
+    'GAPDH','Glyceraldehyde-3-phosphate dehydrogenase';
+    'PGK','Phosphoglycerate kinase';
+    'PGluMu','Phosphoglycerate mutase';
+    'ENO','Enolase';
+    'PK','Pyruvate kinase';
+    'PTS','Phosphotransferase system'};
+
+%%% Or load it from the FULL model:
+% ModelName = 'FULL';
+% filename = sprintf('%s/model_%s_%s.mat', data_dir, ModelName, Glu);
+% load( filename );
+% TF = WT.FluxDistr.FCC > AbsTol;
+% clear RxnList;
+% RxnList(:,2) = WT.FluxDistr.Name( TF );
+% RxnList(:,1) = map_full2short( ModelSpecs.EnzNames, RxnList(:,2) );
+% clear TF;
+
+nRxn = size(RxnList, 1);
+FCC = nan( nMod, nRxn );
+EPS = nan( nRxn, nRxn, nMod);
+
+% EPS(:, :, 4) = WT.FluxDistr.FIC(TF,TF) ./ repmat(FCC( 4, : )', 1, nRxn) ./ repmat(FCC( 4, : ), nRxn, 1) ;
+
+for iMod = 1:nMod
+    ModelName = ModuleList{iMod};
+    filename = sprintf('%s/model_%s_%s.mat', data_dir, ModelName, Glu);    
+    load( filename );
+    
+    for irxn = 1:length(WT.FluxDistr.Name)
+        ix = find(strcmp( RxnList(:,2) , WT.FluxDistr.Name{irxn}));
+        if isempty(ix)
+            continue;
+        end
+        FCC(iMod, ix) = WT.FluxDistr.FCC(irxn);
+    end
+    
+    for irxn1 = 1:length(WT.FluxDistr.Name)-1
+        ix1 = find(strcmp( RxnList(:,2) , WT.FluxDistr.Name{irxn1}));
+        if isempty(ix1)
+            continue;
+        end
+        
+        for irxn2 = irxn1+1:length(WT.FluxDistr.Name)
+            ix2 = find(strcmp( RxnList(:,2) , WT.FluxDistr.Name{irxn2})); 
+
+            if isempty(ix2)
+                continue;
+            end
+
+            EPS( ix1, ix2, iMod ) = WT.FluxDistr.FIC( irxn1, irxn2 ) / FCC( iMod, ix1 ) / FCC( iMod, ix2 );
+            EPS( ix2, ix1, iMod ) = EPS( ix1, ix2, iMod );
+        end
+    end    
+end
+clear iMod ModelName filename irxn ix irxn1 ix1 irxn2 ix2;
+
+
+clf;
+
+
+%%% Specify the following dimensions:
+fdim.spwa = 3; % subplotwidth in cm
+fdim.spha = 3; % subplotheight in cm
+
+fdim.nx = nRxn; % number of panels along the horizontal dimension
+fdim.ny = nRxn; % number of panels along the vertical dimension
+
+fdim.xma = [1 2]; % left right horizontal margin in cm
+fdim.yma = [1.1 0.8]; % bottom top vertical margin cm
+
+fdim.dxa = 0.5; % horizontal distance between panels in cm
+fdim.dya = 0.5; % vertical distance between panels in cm
+
+fdim.tickfs = 8;
+fdim.labelfs = 12;
 
 %%% These will be computed automatically:
 fdim.fw = fdim.spwa * fdim.nx + fdim.dxa * (fdim.nx - 1) + sum(fdim.xma);
@@ -253,136 +285,102 @@ fdim.dyr = fdim.dya / fdim.fh;
 set(gcf, 'Units', 'centimeters');
 set(gcf, 'Position', [0 0 fdim.fw fdim.fh]);
 
-cc = [
-    0, 114, 178;    % blue
-    213, 94, 0;     % vermillion
-    86, 180, 233;   % sky blue
-    230 159, 0;     % orange
-    204, 121, 167;   % raddish purple
-    0, 158, 115;    % bluish green
-    240, 228, 66   % yellow
-    ]./256;
-
 fdim.spxvec = fdim.xmr(1) + fdim.spwr * ( 0:(fdim.nx-1) ) + fdim.dxr * ( 0:(fdim.nx-1) );
 fdim.spyvec = fdim.ymr(1) + fdim.sphr * ( (fdim.ny-1):-1:0 ) + fdim.dyr * ( (fdim.ny-1):-1:0 );
 
-%%% Plot deltas
-subplot('Position', [fdim.spxvec(1) fdim.spyvec(1) fdim.spwr fdim.sphr]),
-hold on, box on;
-set(gca, 'FontName', 'Helvetica', 'FontSize', fdim.tickfs, 'Layer', 'top');
+fdim.minx = 1 - 0.2;
+fdim.maxx = nMod + 1 - fdim.minx;
 
-bar( (1:nModule)'-0.2, DeltaEpsMat(:,1), 0.4, 'FaceColor', 0.5*[1 1 1], 'EdgeColor', 'none');
-bar( (1:nModule)'+0.2, DeltaEpsMat(:,2), 0.4, 'FaceColor', 0.8*[1 1 1], 'EdgeColor', 'none');
+%%% First plot FCC for each rxn
+for iRxn = 1:nRxn
+    subplot('Position', [fdim.spxvec(iRxn) fdim.spyvec(1) fdim.spwr fdim.sphr(1)]),
+    hold on, box on;
+    set(gca, 'FontName', 'Helvetica', 'FontSize', fdim.tickfs, 'Layer', 'top');
+    
+    ix = find(~isnan(FCC(:,iRxn)));
+    X = ix ;
+    Y = FCC( ix, iRxn );
+    
+    plot( X , Y, '-', 'LineWidth', 2, 'Color', 'k');
+    plot( X , Y, 'o', 'LineWidth', 1, ...
+        'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'w', 'MarkerSize', 10);
+    
+    set(gca, 'XLim', [fdim.minx fdim.maxx], 'XTick', 1:nMod);
+    set(gca, 'XTickLabel', ModuleList );
+    set(gca, 'YLim', [-0.1, 1.1], 'YTick', [0 1], 'YGrid', 'on');
+    title(RxnList{iRxn}, 'FontName', 'Helvetica', 'FontSize', fdim.labelfs);
 
-set(gca, 'YScale', 'log', 'YLim', [-0.1, -1e-4]);
-set(gca, 'XLim', [0.5, nModule+0.5], 'XTick', 1:nModule);
-set(gca, 'XTickLabel', {});
-ylabel('Effects of mutations on flux', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs);
-title(sprintf('%s, %s', e1, e2), 'FontName', 'Helvetica', 'FontSize', 16);
+    if iRxn == 1
+     ylabel('FCC', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs,...
+         'Position', [0.53, 0.5]);
+    end    
+end
+clear iRxn ix X Y;
 
 
-%%% Plot eps
-subplot('Position', [fdim.spxvec(1) fdim.spyvec(2) fdim.spwr fdim.sphr]),
-hold on, box on;
-set(gca, 'FontName', 'Helvetica', 'FontSize', fdim.tickfs, 'Layer', 'top');
-
-plot( [0.5 nModule+0.5], zeros(1,2), '-', 'LineWidth', 1, 'Color', 0.4*[1 1 1]);
-
-plot( (1:nModule)', DeltaEpsMat(:,3), 'ok-', 'LineWidth', 2, 'MarkerSize', 15, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'none');
-
-% set(gca, 'YScale', 'log', 'YLim', [-1, -1e-4]);
-set(gca, 'XLim', [0.5, nModule+0.5], 'XTick', 1:nModule, 'XTickLabel', ModuleList);
-xlabel('Module', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs);
-ylabel('Epistasis for flux', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs);
-
-filename =  sprintf('%s/%s/figures [Glu] = %s/eps/%s %s Pert = %.1f.eps', curr_dir, runId, Glu, e1, e2, Pert);
+%%% Second plot EPS for each rxn
+for iRxn1 = 2:nRxn
+    for iRxn2 = 1:iRxn1-1
+        
+        subplot('Position', [fdim.spxvec(iRxn1) fdim.spyvec(iRxn2+1) fdim.spwr fdim.sphr(1)]),
+        hold on, box on;
+        set(gca, 'FontName', 'Helvetica', 'FontSize', fdim.tickfs, 'Layer', 'top');
+        
+        ix = find(~isnan( EPS(iRxn1,iRxn2,:)) );
+        X = ix ;
+        Y = squeeze(EPS(iRxn1,iRxn2,ix));
+        
+        plot( X , Y, '-', 'LineWidth', 2, 'Color', 'k');
+        plot( X , Y, 'o', 'LineWidth', 1, ...
+            'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'w', 'MarkerSize', 10);
+        
+        set(gca, 'XLim', [fdim.minx fdim.maxx], 'XTick', 1:nMod);
+        set(gca, 'XTickLabel', ModuleList );
+                
+        m = 0.05;
+        
+        ylim(1) = min(0, floor( min(Y) ));
+        ylim(2) = max(0, ceil( max(Y) ) );
+        if ylim(1) == ylim(2)
+            ylim(1) = ylim(1) - 1;
+            ylim(2) = ylim(2) + 1;
+        end
+        l = ylim(2) - ylim(1);
+        
+        ytick = ylim;
+        
+        if ylim(1) < 0 && ylim(2) > 0
+            ytick = [ytick(ytick < 0) , 0 , ytick(ytick>0)];
+        end
+        if ylim(1) < 2 && ylim(2) > 2
+            ytick = [ytick(ytick < 2) , 2 , ytick(ytick>2)];
+        end
+        set(gca, 'YLim', [ylim(1)-l*m ,  ylim(2)+l*m], 'YTick', ytick, 'YGrid', 'on');
+        
+        if iRxn2 == iRxn1-1
+            ylabel('Epistasis', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs,...
+                'Position', [0.5, mean(ylim)]);
+        end
+        
+        if iRxn1 == nRxn
+            text(4.6, mean(ylim), RxnList{iRxn2}, 'FontName', 'Helvetica', 'FontSize', fdim.labelfs,...
+                'FontWeight', 'bold', 'HorizontalAlignment', 'left');%  'Rotation', 270, );
+        end
+    end
+    % title(RxnList{iRxn}, 'FontName', 'Helvetica', 'FontSize', fdim.labelfs);
+    %     ylabel('FCC', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs,...
+    %         'Position', [0.53, 0.5]);
+    %     xlabel('Module', 'FontName', 'Helvetica', 'FontSize', fdim.labelfs,...
+    %         'Position', [2, -0.27]);
+    
+end
+clear iRxn ix X Y ylim tmp l m ytick;
+filename =  sprintf('%s/eps/FCC EPI [Glu]=%s all.eps', fig_dir, Glu);
 saveas(gcf, filename, 'epsc');
 
 
-% fdim.ms = 1;
-% 
-% nMut = size(epsMat,1);
-% hpos = [];
-% hneg = [];
-% 
-% for iMut1 = 1:nMut
-%     xpos = iMut1;
-%     ypos = nMut-(iMut1-1);
-%     
-%     delta1 = mutList{iMut1,6};
-% 
-%     text(xpos, ypos, sprintf('%.1e', delta1),...
-%         'HorizontalAlignment','center', 'VerticalAlignment', 'middle',...
-%         'FontName', 'Helvetica', 'FontSize', fdim.labelfs); 
-% end
-% 
-% 
-% for iMut1 = 1:nMut-1
-%     for iMut2 = iMut1+1:nMut
-%                 
-%         if isnan(epsMat(iMut1,iMut2))
-%             c = 0.4 * [1 1 1];
-%         elseif epsMat(iMut1,iMut2) < 0
-%             c = cc(2,:);
-%             % hneg(end+1) = plot( iMut2, nMut-(iMut1-1), 's', 'MarkerSize', 22, 'MarkerEdgeColor', 'none', 'MarkerFaceColor', c);
-%         elseif epsMat(iMut1,iMut2) > 0
-%             c = cc(6,:);
-%             % hpos(end+1) = plot( iMut2, nMut-(iMut1-1), 's', 'MarkerSize', 22, 'MarkerEdgeColor', 'none', 'MarkerFaceColor', c);
-%         else 
-%             c = cc(7,:);
-%         end
-%         xpos = iMut2;
-%         ypos = nMut-(iMut1-1);
-%         
-%         rectangle('Position', [xpos-fdim.ms/2, ypos-fdim.ms/2, fdim.ms, fdim.ms],...
-%             'EdgeColor', 'none', 'FaceColor', c);
-%         text(xpos, ypos, sprintf('%.1f', epsMat(iMut1,iMut2)),...
-%             'HorizontalAlignment','center', 'VerticalAlignment', 'middle',...
-%             'FontName', 'Helvetica', 'FontSize', fdim.labelfs);
-%         
-%         delta1 = mutList{iMut1,6};
-%         delta2 = mutList{iMut2,6};
-% 
-%         xpos = iMut1;
-%         ypos = nMut-(iMut2-1);
-%                 
-%         rectangle('Position', [xpos-fdim.ms/2, ypos-fdim.ms/2, fdim.ms, fdim.ms],...
-%             'EdgeColor', 'none', 'FaceColor', c);
-%         text(xpos, ypos, sprintf('%.1e', epsMat(iMut1,iMut2)*delta1*delta2),...
-%             'HorizontalAlignment','center', 'VerticalAlignment', 'middle',...
-%             'FontName', 'Helvetica', 'FontSize', fdim.labelfs);
-%     end
-% end
-% 
-% for pos = 1.5:1:nMut-0.5
-%     plot( [0.5 nMut+0.5], pos*[1 1], '-', 'Color', 0.8*[1 1 1]);
-%     plot( pos*[1 1], [0.5 nMut+0.5], '-', 'Color', 0.8*[1 1 1]);
-% end
-% 
-% MutEnzList = cellfun(@(x) x{1}, mutList(:,1), 'UniformOutput', false);
-% 
-% set(gca, 'XLim', [0.5 nMut+0.5], 'YLim', [0.5 nMut+0.5], ... %'XGrid', 'on', 'YGrid', 'on', ...
-%     'XTick', 1:nMut, 'YTick', 1:nMut, 'XTickLabel', MutEnzList, 'YTickLabel', flipud(MutEnzList))
-% xtickangle(90);
-% % legend([hpos(1), hneg(1)], 'Pos', 'Neg', 'Location', 'SouthWest');
-% 
-% clear fdim cc hpos hneg iMut1 iMut2 c pos;
-% 
-% %% Saving
-% filename =  sprintf('%s/%s/figures/eps/%s/%s', curr_dir, runId, Glu, ModelSpecs.Type);
-% 
-% for met = fieldnames(ModelSpecs.ExtMetConc)'
-%     filename = sprintf('%s, [%s] = %.2f', filename, met{1}, ModelSpecs.ExtMetConc.(met{1}));
-% end
-% 
-% filename = sprintf('%s, Pert = %.1f', filename, Pert);
-% 
-% if ModelSpecs.IFREMOVE6PGINH
-%     filename = sprintf('%s, no6pginh.eps', filename);
-% else
-%     filename = sprintf('%s.eps', filename);
-% end
-% 
-% saveas(gcf, filename, 'epsc');
+
+
+
 
 
