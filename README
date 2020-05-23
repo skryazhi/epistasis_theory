@@ -1,0 +1,9 @@
+This repository contains the code accompanying the paper
+
+Kryazhimskiy S (2020). "Emergence and propagation of epistasis in metabolic networks"
+
+generating_sets: contains the code for finding all strictly serial and strictly parallel generating sets (see supplementary information)
+
+glycolysis: containts the code for the analysis of the computational model of glycolysis by Chassagnole et al (Figure 3)
+
+toy_network: contains the code for the analysis of the toy network shown in Figure 2
