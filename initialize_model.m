@@ -126,7 +126,7 @@ else
 end
 
 
-%% In the FULL model, set external metabolite concentrations (in mM). In other models, checke that the FULL file exists
+%% In the FULL model, set external metabolite concentrations (in mM). In other models, check that the FULL file exists
 if strcmp(ModelSpecs.Name, 'FULL')
     
     if strcmp(Glu, 'Inf')
