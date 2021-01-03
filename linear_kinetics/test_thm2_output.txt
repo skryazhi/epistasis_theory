@@ -1,0 +1,7 @@
+>> test_thm2
+There are 7274 (1%) cases with eps y < 1 and 0 (0%) cases with eps y <= 0
+Only cases between 0 and 1 are plotted
+>> test_thm2
+There are 0 (0%) cases with eps y > 0 and 0 (0%) cases with eps y >= 1
+Only cases between 0 and 1 are plotted
+>> 

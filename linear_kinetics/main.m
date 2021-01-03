@@ -80,7 +80,7 @@ for iClass = 1:length(ClassList)
     P.( ClassList{iClass} ).rmrxns_nosym = remSym( P.( ClassList{iClass} ).rmrxns , CurrClass.sym );
 end
 
-save('AllSerParGenRxnSets.mat');
+save('AllSerParGenRxnSets.mat', 'ClassDef', 'ClassList', 'P', 'S');
 
 
 
