@@ -1,7 +1,352 @@
+-- SERIAL--
 >> test_thm2
-There are 7274 (1%) cases with eps y < 1 and 0 (0%) cases with eps y <= 0
+>> test_thm2
+--- Generating random parameters ---
+Generating topology 1 out of 11
+Generating topology 2 out of 11
+Generating topology 3 out of 11
+Generating topology 4 out of 11
+Generating topology 5 out of 11
+Generating topology 6 out of 11
+Generating topology 7 out of 11
+Generating topology 8 out of 11
+Generating topology 9 out of 11
+Generating topology 10 out of 11
+Generating topology 11 out of 11
+--- Calculating epistasis ---
+Generating topology 1 out of 11
+Generating topology 2 out of 11
+Generating topology 3 out of 11
+Generating topology 4 out of 11
+Generating topology 5 out of 11
+Generating topology 6 out of 11
+Generating topology 7 out of 11
+Generating topology 8 out of 11
+Generating topology 9 out of 11
+Generating topology 10 out of 11
+Generating topology 11 out of 11
+Generating topology 1:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 2443	| 6629
+Mut. pert 2:		 0	| 2583	| 7084
+Mut. pert 3:		 0	| 3286	| 6562
+Mut. pert 4:		 0	| 0	| 9068
+Mut. pert 5:		 0	| 0	| 9637
+Mut. pert 6:		 0	| 0	| 9771
+Mut. pert 7:		 0	| 1234	| 7837
+Mut. pert 8:		 0	| 1372	| 8286
+Mut. pert 9:		 0	| 2156	| 7668
+Generating topology 2:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 2160	| 5372
+Mut. pert 2:		 0	| 2418	| 6330
+Mut. pert 3:		 0	| 2981	| 6339
+Mut. pert 4:		 0	| 0	| 7521
+Mut. pert 5:		 0	| 0	| 8678
+Mut. pert 6:		 0	| 0	| 9103
+Mut. pert 7:		 0	| 604	| 6927
+Mut. pert 8:		 0	| 683	| 8062
+Mut. pert 9:		 0	| 974	| 8334
+Generating topology 3:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 638	| 6220
+Mut. pert 2:		 0	| 677	| 7723
+Mut. pert 3:		 0	| 831	| 8313
+Mut. pert 4:		 0	| 0	| 6845
+Mut. pert 5:		 0	| 0	| 8309
+Mut. pert 6:		 0	| 0	| 8853
+Mut. pert 7:		 0	| 335	| 6513
+Mut. pert 8:		 0	| 385	| 7975
+Mut. pert 9:		 0	| 565	| 8483
+Generating topology 4:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 2204	| 5315
+Mut. pert 2:		 0	| 2502	| 6498
+Mut. pert 3:		 0	| 3132	| 6467
+Mut. pert 4:		 0	| 0	| 7503
+Mut. pert 5:		 0	| 0	| 8927
+Mut. pert 6:		 0	| 0	| 9432
+Mut. pert 7:		 0	| 1697	| 5809
+Mut. pert 8:		 0	| 2007	| 6937
+Mut. pert 9:		 0	| 2740	| 6720
+Generating topology 5:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 1355	| 2696
+Mut. pert 2:		 0	| 1963	| 4579
+Mut. pert 3:		 0	| 2661	| 5310
+Mut. pert 4:		 0	| 0	| 4036
+Mut. pert 5:		 0	| 0	| 6427
+Mut. pert 6:		 0	| 0	| 7632
+Mut. pert 7:		 0	| 1240	| 2798
+Mut. pert 8:		 0	| 1834	| 4596
+Mut. pert 9:		 0	| 2532	| 5115
+Generating topology 6:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 508	| 4543
+Mut. pert 2:		 0	| 591	| 6459
+Mut. pert 3:		 0	| 726	| 7370
+Mut. pert 4:		 0	| 0	| 5038
+Mut. pert 5:		 0	| 0	| 6948
+Mut. pert 6:		 0	| 0	| 7678
+Mut. pert 7:		 0	| 158	| 4889
+Mut. pert 8:		 0	| 176	| 6858
+Mut. pert 9:		 0	| 259	| 7780
+Generating topology 7:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 518	| 4075
+Mut. pert 2:		 0	| 625	| 6374
+Mut. pert 3:		 0	| 767	| 7501
+Mut. pert 4:		 0	| 0	| 4578
+Mut. pert 5:		 0	| 0	| 6906
+Mut. pert 6:		 0	| 0	| 7869
+Mut. pert 7:		 0	| 385	| 4198
+Mut. pert 8:		 0	| 485	| 6450
+Mut. pert 9:		 0	| 660	| 7310
+Generating topology 8:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 64	| 3574
+Mut. pert 2:		 0	| 66	| 6190
+Mut. pert 3:		 0	| 86	| 7703
+Mut. pert 4:		 0	| 0	| 3616
+Mut. pert 5:		 0	| 0	| 6104
+Mut. pert 6:		 0	| 0	| 7223
+Mut. pert 7:		 0	| 28	| 3602
+Mut. pert 8:		 0	| 30	| 6147
+Mut. pert 9:		 0	| 49	| 7417
+Generating topology 9:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 478	| 4592
+Mut. pert 2:		 0	| 558	| 6643
+Mut. pert 3:		 0	| 681	| 7621
+Mut. pert 4:		 0	| 0	| 5050
+Mut. pert 5:		 0	| 0	| 7099
+Mut. pert 6:		 0	| 0	| 7971
+Mut. pert 7:		 0	| 379	| 4674
+Mut. pert 8:		 0	| 458	| 6653
+Mut. pert 9:		 0	| 605	| 7417
+Generating topology 10:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 305	| 1946
+Mut. pert 2:		 0	| 474	| 4080
+Mut. pert 3:		 0	| 644	| 5507
+Mut. pert 4:		 0	| 0	| 2242
+Mut. pert 5:		 0	| 0	| 4425
+Mut. pert 6:		 0	| 0	| 5694
+Mut. pert 7:		 0	| 285	| 1958
+Mut. pert 8:		 0	| 443	| 3988
+Mut. pert 9:		 0	| 602	| 5101
+Generating topology 11:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 0	| 53	| 1527
+Mut. pert 2:		 0	| 60	| 3760
+Mut. pert 3:		 0	| 75	| 5750
+Mut. pert 4:		 0	| 0	| 1567
+Mut. pert 5:		 0	| 0	| 3685
+Mut. pert 6:		 0	| 0	| 5138
+Mut. pert 7:		 0	| 41	| 1529
+Mut. pert 8:		 0	| 49	| 3671
+Mut. pert 9:		 0	| 62	| 5182
+There are 42878 (6%) cases with eps y < 1 and 0 (0%) cases with eps y <= 0
 Only cases between 0 and 1 are plotted
+
+
+
+--- PARALLEL ---
 >> test_thm2
+--- Generating random parameters ---
+Generating topology 1 out of 17
+Generating topology 2 out of 17
+Generating topology 3 out of 17
+Generating topology 4 out of 17
+Generating topology 5 out of 17
+Generating topology 6 out of 17
+Generating topology 7 out of 17
+Generating topology 8 out of 17
+Generating topology 9 out of 17
+Generating topology 10 out of 17
+Generating topology 11 out of 17
+Generating topology 12 out of 17
+Generating topology 13 out of 17
+Generating topology 14 out of 17
+Generating topology 15 out of 17
+Generating topology 16 out of 17
+Generating topology 17 out of 17
+--- Calculating epistasis ---
+Generating topology 1 out of 17
+Generating topology 2 out of 17
+Generating topology 3 out of 17
+Generating topology 4 out of 17
+Generating topology 5 out of 17
+Generating topology 6 out of 17
+Generating topology 7 out of 17
+Generating topology 8 out of 17
+Generating topology 9 out of 17
+Generating topology 10 out of 17
+Generating topology 11 out of 17
+Generating topology 12 out of 17
+Generating topology 13 out of 17
+Generating topology 14 out of 17
+Generating topology 15 out of 17
+Generating topology 16 out of 17
+Generating topology 17 out of 17
+Generating topology 1:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 9185	| 0	| 0
+Mut. pert 2:		 9667	| 0	| 0
+Mut. pert 3:		 9859	| 0	| 0
+Mut. pert 4:		 9178	| 0	| 0
+Mut. pert 5:		 9636	| 0	| 0
+Mut. pert 6:		 9788	| 0	| 0
+Mut. pert 7:		 9178	| 0	| 0
+Mut. pert 8:		 9636	| 0	| 0
+Mut. pert 9:		 9788	| 0	| 0
+Generating topology 2:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 6694	| 0	| 0
+Mut. pert 2:		 8490	| 0	| 0
+Mut. pert 3:		 9263	| 0	| 0
+Mut. pert 4:		 6688	| 0	| 0
+Mut. pert 5:		 8441	| 0	| 0
+Mut. pert 6:		 9106	| 0	| 0
+Mut. pert 7:		 6688	| 0	| 0
+Mut. pert 8:		 8441	| 0	| 0
+Mut. pert 9:		 9106	| 0	| 0
+Generating topology 3:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 8457	| 0	| 0
+Mut. pert 2:		 9276	| 0	| 0
+Mut. pert 3:		 9617	| 0	| 0
+Mut. pert 4:		 8451	| 0	| 0
+Mut. pert 5:		 9237	| 0	| 0
+Mut. pert 6:		 9499	| 0	| 0
+Mut. pert 7:		 8453	| 0	| 0
+Mut. pert 8:		 9260	| 0	| 0
+Mut. pert 9:		 9558	| 0	| 0
+Generating topology 4:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 8869	| 0	| 0
+Mut. pert 2:		 9626	| 0	| 0
+Mut. pert 3:		 9868	| 0	| 0
+Mut. pert 4:		 8858	| 0	| 0
+Mut. pert 5:		 9592	| 0	| 0
+Mut. pert 6:		 9776	| 0	| 0
+Mut. pert 7:		 8863	| 0	| 0
+Mut. pert 8:		 9615	| 0	| 0
+Mut. pert 9:		 9832	| 0	| 0
+Generating topology 5:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 7255	| 0	| 0
+Mut. pert 2:		 8778	| 0	| 0
+Mut. pert 3:		 9355	| 0	| 0
+Mut. pert 4:		 7242	| 0	| 0
+Mut. pert 5:		 8731	| 0	| 0
+Mut. pert 6:		 9223	| 0	| 0
+Mut. pert 7:		 7243	| 0	| 0
+Mut. pert 8:		 8731	| 0	| 0
+Mut. pert 9:		 9223	| 0	| 0
+Generating topology 6:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 6362	| 0	| 0
+Mut. pert 2:		 8403	| 0	| 0
+Mut. pert 3:		 9205	| 0	| 0
+Mut. pert 4:		 6346	| 0	| 0
+Mut. pert 5:		 8340	| 0	| 0
+Mut. pert 6:		 9016	| 0	| 0
+Mut. pert 7:		 6350	| 0	| 0
+Mut. pert 8:		 8351	| 0	| 0
+Mut. pert 9:		 9059	| 0	| 0
+Generating topology 7:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 6807	| 0	| 0
+Mut. pert 2:		 8423	| 0	| 0
+Mut. pert 3:		 9119	| 0	| 0
+Mut. pert 4:		 6795	| 0	| 0
+Mut. pert 5:		 8360	| 0	| 0
+Mut. pert 6:		 8948	| 0	| 0
+Mut. pert 7:		 6796	| 0	| 0
+Mut. pert 8:		 8377	| 0	| 0
+Mut. pert 9:		 8992	| 0	| 0
+Generating topology 8:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 3800	| 0	| 0
+Mut. pert 2:		 6303	| 0	| 0
+Mut. pert 3:		 7683	| 0	| 0
+Mut. pert 4:		 3787	| 0	| 0
+Mut. pert 5:		 6188	| 0	| 0
+Mut. pert 6:		 7332	| 0	| 0
+Mut. pert 7:		 3787	| 0	| 0
+Mut. pert 8:		 6188	| 0	| 0
+Mut. pert 9:		 7332	| 0	| 0
+Generating topology 9:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 5946	| 0	| 0
+Mut. pert 2:		 7923	| 0	| 0
+Mut. pert 3:		 8826	| 0	| 0
+Mut. pert 4:		 5931	| 0	| 0
+Mut. pert 5:		 7859	| 0	| 0
+Mut. pert 6:		 8603	| 0	| 0
+Mut. pert 7:		 5940	| 0	| 0
+Mut. pert 8:		 7892	| 0	| 0
+Mut. pert 9:		 8716	| 0	| 0
+Generating topology 10:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 3605	| 0	| 0
+Mut. pert 2:		 6200	| 0	| 0
+Mut. pert 3:		 7706	| 0	| 0
+Mut. pert 4:		 3596	| 0	| 0
+Mut. pert 5:		 6082	| 0	| 0
+Mut. pert 6:		 7277	| 0	| 0
+Mut. pert 7:		 3596	| 0	| 0
+Mut. pert 8:		 6089	| 0	| 0
+Mut. pert 9:		 7282	| 0	| 0
+Generating topology 11:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 4528	| 0	| 0
+Mut. pert 2:		 7416	| 0	| 0
+Mut. pert 3:		 8675	| 0	| 0
+Mut. pert 4:		 4511	| 0	| 0
+Mut. pert 5:		 7312	| 0	| 0
+Mut. pert 6:		 8394	| 0	| 0
+Mut. pert 7:		 4523	| 0	| 0
+Mut. pert 8:		 7360	| 0	| 0
+Mut. pert 9:		 8529	| 0	| 0
+Generating topology 12:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 1079	| 0	| 0
+Mut. pert 2:		 3112	| 0	| 0
+Mut. pert 3:		 5029	| 0	| 0
+Mut. pert 4:		 1069	| 0	| 0
+Mut. pert 5:		 2989	| 0	| 0
+Mut. pert 6:		 4439	| 0	| 0
+Mut. pert 7:		 1069	| 0	| 0
+Mut. pert 8:		 2990	| 0	| 0
+Mut. pert 9:		 4440	| 0	| 0
+Generating topology 13:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 5387	| 0	| 0
+Mut. pert 2:		 7702	| 0	| 0
+Mut. pert 3:		 8735	| 0	| 0
+Mut. pert 4:		 5366	| 0	| 0
+Mut. pert 5:		 7602	| 0	| 0
+Mut. pert 6:		 8452	| 0	| 0
+Mut. pert 7:		 5373	| 0	| 0
+Mut. pert 8:		 7654	| 0	| 0
+Mut. pert 9:		 8593	| 0	| 0
+Generating topology 14:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 3354	| 0	| 0
+Mut. pert 2:		 5987	| 0	| 0
+Mut. pert 3:		 7503	| 0	| 0
+Mut. pert 4:		 3339	| 0	| 0
+Mut. pert 5:		 5857	| 0	| 0
+Mut. pert 6:		 7101	| 0	| 0
+Mut. pert 7:		 3342	| 0	| 0
+Mut. pert 8:		 5876	| 0	| 0
+Mut. pert 9:		 7171	| 0	| 0
+Generating topology 15:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 3677	| 0	| 0
+Mut. pert 2:		 6219	| 0	| 0
+Mut. pert 3:		 7763	| 0	| 0
+Mut. pert 4:		 3669	| 0	| 0
+Mut. pert 5:		 6114	| 0	| 0
+Mut. pert 6:		 7302	| 0	| 0
+Mut. pert 7:		 3670	| 0	| 0
+Mut. pert 8:		 6131	| 0	| 0
+Mut. pert 9:		 7374	| 0	| 0
+Generating topology 16:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 2307	| 0	| 0
+Mut. pert 2:		 5033	| 0	| 0
+Mut. pert 3:		 6939	| 0	| 0
+Mut. pert 4:		 2296	| 0	| 0
+Mut. pert 5:		 4889	| 0	| 0
+Mut. pert 6:		 6277	| 0	| 0
+Mut. pert 7:		 2301	| 0	| 0
+Mut. pert 8:		 4957	| 0	| 0
+Mut. pert 9:		 6613	| 0	| 0
+Generating topology 17:	 <= 0	| (0,1)	| >= 1
+Mut. pert 1:		 7619	| 0	| 0
+Mut. pert 2:		 9134	| 0	| 0
+Mut. pert 3:		 9632	| 0	| 0
+Mut. pert 4:		 7607	| 0	| 0
+Mut. pert 5:		 9079	| 0	| 0
+Mut. pert 6:		 9495	| 0	| 0
+Mut. pert 7:		 7610	| 0	| 0
+Mut. pert 8:		 9111	| 0	| 0
+Mut. pert 9:		 9557	| 0	| 0
 There are 0 (0%) cases with eps y > 0 and 0 (0%) cases with eps y >= 1
 Only cases between 0 and 1 are plotted
->> 

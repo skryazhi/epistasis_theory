@@ -1,6 +1,10 @@
 %%% This code test whether the results of Theorem 1 hold when the
 %%% the effects of mutations are not infinitesimally small
 
+%%% Update: 3 January 2021 (SK)
+%%% (1) Added a probability for a reaction to have zero rate constant in genKineticParamsLin.m
+%%% (2) Fixed error in fixed point calculation for linear function fit
+
 %%% Update: 22 Dec 2020 (SK). Added new plot combining results for
 %%% topological classes Mio and Mi
 
@@ -65,8 +69,8 @@ eps.xvec = (-1:0.2:2)';
 TF01 = eps.xvec >= 0 & eps.xvec <= 1;
 
 % Distribution of kinetic parameters
-DistrType = 'Exponential';
-DistrParam  = 1;
+DistrType = 'Exp0';
+DistrParam  = [0.25 , 1]; % 25% probability of having no edge, parameter of the exponential is 1
 
 nMut = size(mutMat,1 );
 neps = length(eps.xvec);
@@ -89,12 +93,24 @@ if IFGENPARAMS
     KeqMat0 = nan( size(AdjMat,1), size(AdjMat,2), ParamSetCnt);
     
     for iParam = 1:ParamSetCnt
-        [VmMat0(:,:,iParam), KeqMat0(:,:,iParam)] = genKineticParamsLin( AdjMat, DistrType, DistrParam );
+        
+        ISMUTRXNPRESENT = false;
+        
+        while ~ISMUTRXNPRESENT 
+            [VmMatTMP, KeqMatTMP] = genKineticParamsLin( AdjMat, DistrType, DistrParam );
+            if VmMatTMP( MutRxn(1), MutRxn(2) ) > 0
+                ISMUTRXNPRESENT = true;
+            end
+        end
+        
+        VmMat0(:,:,iParam) = VmMatTMP;
+        KeqMat0(:,:,iParam) = KeqMatTMP;
     end
     
     filename = sprintf('params_%s.mat', ModuleClass);
     save(filename, 'VmMat0', 'KeqMat0');
 end
+clear iParam ISMUTRXNPRESENT VmMatTMP KeqMatTMP;
 
 
 %% Calculating how eps y depends on eps x
@@ -236,26 +252,28 @@ if IFCALCULATE
 end
 
 
+
+
+
+
+
 %% DATA SUMMARIES AND VISUALIZATION
 
 ModuleClassList = {'Mio', 'Mi'};
 
+% Will display only bar-eps values between these numbers
+xMin = 0; 
+xMax = 4;
+xLen = xMax - xMin;
+xTickLabels = arrayfun(@(x) sprintf('(%d, %d]', x, x+1),  xMin:(xMax-1), 'UniformOutput', false);
+xTickLabels = [{sprintf('< %d', xMin)} xTickLabels {sprintf('> %d', xMax), 'No f.p.'}];
+
 close all;
 
-cc = [
-    0, 114, 178;    % blue
-    213, 94, 0;     % vermillion
-    86, 180, 233;   % sky blue
-    230 159, 0;     % orange
-    204, 121, 167;   % raddish purple
-    0, 158, 115;    % bluish green
-    240, 228, 66   % yellow
-    ]./256;
-
-edges = [-0.2 0:1:3]; % edges for the histogram for the fixed point location
-X = 0:4;      % X locations for the histogram plot
-Y = nan(1,5); % histrogram counts for a single topological class;
-Ytot = zeros( nMut, 5); % total histrogram counts (across both topological classes);
+edges = xMin:1:xMax; % edges for the histogram for the fixed point location
+X = (xMin-1):(xLen+1);      % X locations for the histogram plot
+Y = nan(1,xLen+3); % histrogram counts for a single topological class;
+Ytot = zeros( nMut, xLen+3); % total histrogram counts (across both topological classes);
 
 for iMC = 1:2
     ModuleClass = ModuleClassList{iMC};
@@ -282,16 +300,16 @@ for iMC = 1:2
 
     %% Print some summary statistics
     fprintf('=== Module class %s ===\n', ModuleClass);
-    fprintf('Mut. perturb set\tno f.p.\tf.p. < 0\tf.p. > 1\tf.p. > 3\tf.p.slope < 1\n')
+    fprintf('Mut. perturb set\tno f.p.\tf.p. < %d\tf.p. > 1\tf.p. > %d\tf.p.slope < 1\n', xMin, xMax)
     fprintf('---\n');
     
     for iMut = 1:nMut
         fprintf('%d\t%d\t%d\t%d\t%d\t%d\n',...
             iMut,... % mutational perturbation set
             nnz(isnan(eps.fp(:,iMut))),... % existence of fixed point
-            nnz( eps.fp(:,iMut) < 0 ), ... % fixed point < 0
+            nnz( eps.fp(:,iMut) < xMin ), ... % fixed point < 0
             nnz( eps.fp(:,iMut) > 1 ), ... % fixed point > 1
-            nnz( eps.fp(:,iMut) > 3 ), ... % fixed point > 3
+            nnz( eps.fp(:,iMut) > xMax ), ... % fixed point > 3
             nnz( eps.slope_fp(:,iMut) < 1 ) ... % fixed point stable ?
             );
         fprintf('---\n');
@@ -305,7 +323,8 @@ for iMC = 1:2
             ixvec = find(isnan(eps.fp(:,iMut)));
             cntpos = 0;
             for ix = ixvec'
-                if feval(eps.ft{1,1}, 0) < 0
+                % checkin the value of the phi function at 0:
+                if feval(eps.ft{1,1}, 0) < 0 
                     cntpos = cntpos+1;
                 end
             end
@@ -363,18 +382,21 @@ for iMC = 1:2
         hold on, box on;
         set(gca, 'FontName', 'Helvetica', 'FontSize', fdim.tickfs, 'Layer', 'top');
         
-        [Y(1:4), edges] = histcounts( eps.fp(:,iMut), edges );
-        Y(5) = nnz( isnan(eps.fp(:,iMut)) );
+        [Y(2:xLen+1), edges] = histcounts( eps.fp(:,iMut), edges );
+        Y(1) = nnz( eps.fp(:,iMut) <= xMin );
+        Y(xLen+2) = nnz( eps.fp(:,iMut) > xMax );
+        Y(xLen+3) = nnz( isnan(eps.fp(:,iMut)) );
         Ytot(iMut,:) = Ytot(iMut,:) + Y;
         Y = Y/size(eps.fp,1);
         
         bar(X,Y, 0.9, 'FaceColor', 0.4*[1 1 1], 'EdgeColor', 'none', 'ShowBaseLine', 'off');        
         
-        set(gca, 'XLim', [-0.75 4.75], 'XTick', 0:4);
+        set(gca, 'XLim', [xMin-1 xMax+1] + [-0.5 0.5] + (xLen+2)*0.05*[-1 +1],...
+            'XTick', xMin-1:xMax+1 );
         set(gca, 'YLim', [-0.05, 1.05]);
         
         if iy == 3
-            set(gca, 'XTickLabel', {'[-0.2,0)', '[0,1)','[1,2)','[2,3]', 'No f.p.'});
+            set(gca, 'XTickLabel', xTickLabels);
             if ix == 2
                 xlabel('Fixed point position', 'FontSize', fdim.labelfs, 'FontName', 'Helvetica');
             end
@@ -411,13 +433,7 @@ end
 
 %% Plotting Figure 4
 
-%%% Checking that all modules are accounted for in Ytot (all sums should be
-%%% equal to 2000):
-
-if any( sum(Ytot,2) ~= 2000 )
-    warning('Some modules may not be accounted for in Ytot.');
-end
-Ytot = Ytot ./ repmat(sum(Ytot,2), 1, 5);
+Ytot = Ytot ./ repmat(sum(Ytot,2), 1, xLen+3);
 
 %%% Specify the following dimensions:
 fdim.spwa = 5; % subplotwidth in cm
@@ -466,10 +482,11 @@ for iMut = 4:6
     
     bar(X,Ytot(iMut,:), 0.9, 'FaceColor', 0.4*[1 1 1], 'EdgeColor', 'none', 'ShowBaseLine', 'off');
     
-    set(gca, 'XLim', [-0.75 4.75], 'XTick', 0:4);
+    set(gca, 'XLim', [xMin-1 xMax+1] + [-0.5 0.5] + (xLen+2)*0.05*[-1 +1],...
+            'XTick', xMin-1:xMax+1 );
     set(gca, 'YLim', [-0.05, 1.05]);
     
-    set(gca, 'XTickLabel', {'[-0.2,0)', '[0,1)','[1,2)','[2,3]', 'No f.p.'});
+    set(gca, 'XTickLabel', xTickLabels);
     
     xtickangle(45);
     
@@ -492,7 +509,9 @@ for iMut = 4:6
     
 end
 
-clear fdim cc iMut ix iy X Ytot edges lim;
+fprintf('%.1f%% cases with +50%% effect have bar eps > 1\n', sum(Ytot(6,3:xLen+2))*100 );
+
+clear fdim cc iMut ix iy X Ytot edges lim s xLen xMin xMax xTickLabels;
 
 
 

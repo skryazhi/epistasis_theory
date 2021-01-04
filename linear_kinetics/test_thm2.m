@@ -1,6 +1,9 @@
 %%% This code test whether the results of Theorem 1 hold when the
 %%% the effects of mutations are not infinitesimally small
 
+%%% Update: 3 January 2021 (SK)
+%%% Added a probability for a reaction to have zero rate constant in genKineticParamsLin.m
+
 %%% Update 22 Dec 2020 (SK)
 
 %%% Update 23 Oct 2020 (SK)
@@ -36,12 +39,12 @@
 
 %% Parameter definitions
 
-filename = '../generating_sets/AllSerParGenRxnSets.mat';
+filename = 'AllSerParGenRxnSets.mat';
 
 if exist(filename, 'file') == 2
     load(filename);
 else
-    error('Run main.m in the generating_sets directory to create data file AllSerParGenRxnSets.mat that contains all strictly serial and strictly parallel topologies');
+    error('Run discover_generating_topologies.m to create data file AllSerParGenRxnSets.mat that contains all strictly serial and strictly parallel topologies');
 end
 
 TopoRelation = 'parallel'; % 'parallel' or 'serial';
@@ -68,11 +71,12 @@ mutMat = [
 
 
 % Distribution of kinetic parameters
-DistrType = 'Exponential';
-DistrParam  = 1;
+DistrType = 'Exp0';
+DistrParam  = [0.25 , 1]; % 25% probability of having no edge, parameter of the exponential is 1
 
 % Precision threshold:
-PrecThr = 1e-5; % epsilon values with absolute value below this threshold are considered to be zero
+MutTol = 1e-5; % mutational effects with absolute value below this threshold are considered to be zero
+EpsTol = 1e-2; % epsilon values close to zero and 1 are evaluated with this tolerance
 
 nMut = size(mutMat,1 );
 
@@ -148,19 +152,38 @@ if IFGENPARAMS
     Params.VmMat0 = cell( Params.nGT, 1);
     Params.KeqMat0 = cell( Params.nGT, 1);
     
+    fprintf('--- Generating random parameters ---\n');
     for iGT = 1:Params.nGT
         
-        AdjMat = Params.AdjMat{iGT};
+        fprintf('Generating topology %d out of %d\n', iGT, Params.nGT);
+        
+        AdjMat = Params.AdjMat{iGT};        
         
         Params.VmMat0{iGT} = nan( size(AdjMat,1), size(AdjMat,2), ParamSetCnt);
         Params.KeqMat0{iGT} = nan( size(AdjMat,1), size(AdjMat,2), ParamSetCnt);
         
+        MutRxn = nan(2,2);
+        MutRxn(1,:) = ClassDef.(Params.TC{iGT}).a;
+        MutRxn(2,:) = ClassDef.(Params.TC{iGT}).b;
+
+        
         for iParam = 1:ParamSetCnt
-            [Params.VmMat0{iGT}(:,:,iParam), Params.KeqMat0{iGT}(:,:,iParam)]...
-                = genKineticParamsLin( AdjMat, DistrType, DistrParam );
+            
+            ISMUTRXNPRESENT = false;
+            
+            while ~ISMUTRXNPRESENT
+                [VmMat, KeqMatTMP] = genKineticParamsLin( AdjMat, DistrType, DistrParam );
+
+                if VmMat( MutRxn(1,1), MutRxn(1,2) ) > 0 && VmMat( MutRxn(2,1), MutRxn(2,2) ) > 0
+                    ISMUTRXNPRESENT = true;
+                end
+            end
+
+            Params.VmMat0{iGT}(:,:,iParam) = VmMat;
+            Params.KeqMat0{iGT}(:,:,iParam) = KeqMatTMP;
         end
     end
-    clear iGT AdjMat iParam;
+    clear iGT AdjMat iParam ISMUTRXNPRESENT VmMatTMP KeqMatTMP MutRxn AdjMat;
     
     filename = sprintf('params_%s.mat', TopoRelation);
     save(filename, 'Params', 'ClassDef');
@@ -181,9 +204,10 @@ if IFCALCULATE
 
     eps = nan( ParamSetCnt , nMut, Params.nGT );
     
+    fprintf('--- Calculating epistasis ---\n');
     for iGT = 1:Params.nGT
         
-        fprintf('Toplogy %d\n', iGT);
+        fprintf('Generating topology %d out of %d\n', iGT, Params.nGT);
         
         MutRxn = nan(2,2);
         MutRxn(1,:) = ClassDef.(Params.TC{iGT}).a;
@@ -207,7 +231,7 @@ if IFCALCULATE
                 VmMat(MutRxn(1,2),MutRxn(1,1)) = VmMat(MutRxn(1,1),MutRxn(1,2)) / KeqMat(MutRxn(1,1),MutRxn(1,2));
                 dyA = get_effective_rate( VmMat , KeqMat ) / yWT - 1;
                 
-                if abs(dyA) < PrecThr
+                if abs(dyA) < MutTol
                     continue;
                 end
                 
@@ -217,7 +241,7 @@ if IFCALCULATE
                 VmMat(MutRxn(2,2),MutRxn(2,1)) = VmMat(MutRxn(2,1),MutRxn(2,2)) / KeqMat(MutRxn(2,1),MutRxn(2,2));
                 dyB = get_effective_rate( VmMat , KeqMat ) / yWT - 1;
                 
-                if abs(dyB) < PrecThr
+                if abs(dyB) < MutTol
                     continue;
                 end
                 
@@ -238,9 +262,9 @@ if IFCALCULATE
         fprintf('Generating topology %d:\t <= 0\t| (0,1)\t| >= 1\n', iGT);
         for iMut = 1:nMut
             fprintf('Mut. pert %d:\t', iMut);
-            fprintf('\t %d', nnz( eps(:,iMut,iGT) <= PrecThr ) );
-            fprintf('\t| %d', nnz( eps(:,iMut,iGT) > PrecThr & eps(:,iMut,iGT) < 1 - PrecThr ) );
-            fprintf('\t| %d\n', nnz( eps(:,iMut,iGT) >= 1 - PrecThr ) );
+            fprintf('\t %d', nnz( eps(:,iMut,iGT) <= EpsTol ) );
+            fprintf('\t| %d', nnz( eps(:,iMut,iGT) > EpsTol & eps(:,iMut,iGT) < 1 - EpsTol ) );
+            fprintf('\t| %d\n', nnz( eps(:,iMut,iGT) >= 1 - EpsTol ) );
         end
     end
 
@@ -275,13 +299,13 @@ end
 %%% Plot histrogram of fixed point locations
 if strcmp(TopoRelation, 'parallel')
     fprintf('There are %d (%.1g%%) cases with eps y > 0 and %d (%.1g%%) cases with eps y >= 1\n',...
-        nnz(eps > PrecThr ), nnz(eps > PrecThr )/nnz( ~isnan(eps) ) * 100,...
-        nnz(eps >= 1-PrecThr ), nnz(eps >= 1-PrecThr )/nnz( ~isnan(eps) )*100  );
+        nnz(eps > EpsTol ), nnz(eps > EpsTol )/nnz( ~isnan(eps) ) * 100,...
+        nnz(eps >= 1-EpsTol ), nnz(eps >= 1-EpsTol )/nnz( ~isnan(eps) )*100  );
     
 elseif strcmp(TopoRelation, 'serial')
     fprintf('There are %d (%.1g%%) cases with eps y < 1 and %d (%.1g%%) cases with eps y <= 0\n',...
-        nnz(eps < 1 - PrecThr ), nnz(eps < 1-PrecThr )/nnz( ~isnan(eps) ) * 100,...
-        nnz(eps <= PrecThr ), nnz(eps <= PrecThr )/nnz( ~isnan(eps) )*100  );
+        nnz(eps < 1 - EpsTol ), nnz(eps < 1-EpsTol )/nnz( ~isnan(eps) ) * 100,...
+        nnz(eps <= EpsTol ), nnz(eps <= EpsTol )/nnz( ~isnan(eps) )*100  );
 end
 
 fprintf('Only cases between 0 and 1 are plotted\n');
@@ -292,7 +316,7 @@ TotCnt = nan( Params.nGT , nMut ); % total number of cases where epistasis could
 
 for iMut = 1:nMut    
     for iGT = 1:Params.nGT
-        EpsCnt( iGT, iMut) = nnz( eps(:,iMut,iGT) > PrecThr & eps(:,iMut,iGT) < 1 - PrecThr );        
+        EpsCnt( iGT, iMut) = nnz( eps(:,iMut,iGT) > EpsTol & eps(:,iMut,iGT) < 1 - EpsTol );        
         TotCnt(iGT, iMut) = nnz( ~isnan(eps(:,iMut,iGT)) );
     end
 end
@@ -336,7 +360,7 @@ fdim.spyvec = fdim.ymr(1) + fdim.sphr * ( (fdim.ny-1):-1:0 ) + fdim.dyr * ( (fdi
 
 % fdim
 
-Ymax = 0.12; % max(max(Y(:,2,:)));
+Ymax = 0.4;
 
 if Ymax == 0
     Ymax = 1;
@@ -354,7 +378,7 @@ for iMut = 1:nMut
                 
     set(gca, 'XLim', [0.25, Params.nGT+0.75], 'XTick', 1:Params.nGT);
     set(gca, 'YLim', Ymax*[-0.05 1.05]);
-    xtickangle(45);
+    xtickangle(90);
       
     if iy == 3
         set(gca, 'XTickLabel', GTID);
@@ -387,7 +411,7 @@ for iMut = 1:nMut
     
 end
 
-clear fdim iMut ix iy X Y edges lim iGT Ymax s;
+clear fdim iMut ix iy X Y edges lim iGT s;
 
 
 
@@ -403,7 +427,7 @@ if strcmp(TopoRelation, 'serial')
     
     for iMut = 1:nMut
         for iGT = 1:Params.nGT
-            EpsCnt( iGT, iMut) = nnz( eps(:,iMut,iGT) > PrecThr & eps(:,iMut,iGT) < 1 - PrecThr );
+            EpsCnt( iGT, iMut) = nnz( eps(:,iMut,iGT) > EpsTol & eps(:,iMut,iGT) < 1 - EpsTol );
             TotCnt(iGT, iMut) = nnz( ~isnan(eps(:,iMut,iGT)) );
         end
     end
@@ -470,10 +494,10 @@ if strcmp(TopoRelation, 'serial')
     legend({'-,-', '+,+', '+,-'}, 'Location', 'NorthWest');
     
     set(gca, 'XLim', [0.9, 3.1], 'XTick', 1:3, 'XTickLabel', {'1%', '10%', '50%'});
-    set(gca, 'YLim', [-2e-3, 4.2e-2], 'YTick', 0:0.01:0.04);
+    set(gca, 'YLim', [0, 0.2] + 0.2*0.05 * [-1 1], 'YTick', 0:0.05:Ymax);
     
     xlabel('Effect of mutations', 'FontSize', fdim.labelfs, 'FontName', 'Helvetica');
-    ylabel(sprintf('Fraction of sampled modules\nwith 0 < \\epsilon y_\\mu < 1'), 'FontSize', fdim.labelfs, 'FontName', 'Helvetica');
+    ylabel(sprintf('Fraction of sampled modules\nwith \\gamma < \\epsilon y_\\mu < 1-\\gamma'), 'FontSize', fdim.labelfs, 'FontName', 'Helvetica');
     
-    clear fdim iMut i1 X Y cc;
+    clear fdim iMut i1 X Y cc Ymax;
 end
