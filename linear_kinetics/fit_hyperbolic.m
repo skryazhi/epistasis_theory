@@ -64,15 +64,12 @@ alpha = ((y3-y1)./(x3-x1)) ./ ((y2-y1)./(x2-x1));
 
 if min(abs(alpha - 1)) < 1e-3 || ( any(alpha - 1 < 0) && any(alpha - 1 > 0) )
     coeffs = regress(Y, [ones(size(X)), X]);
-    a = coeffs(1);
-    b = coeffs(2);
-    
+    a = coeffs(1) * scale_factor;
+    b = coeffs(2) * scale_factor;
+        
     % Fixed point calculation
-    fp = -a / b;
-    
-    a = a * scale_factor;
-    b = b * scale_factor;
-    
+    fp = a/ (1-b);
+
     ft = fittype('a + b*x');
     fitobj = cfit(ft, a, b);
     
