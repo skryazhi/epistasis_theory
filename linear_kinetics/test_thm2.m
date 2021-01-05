@@ -47,7 +47,7 @@ else
     error('Run discover_generating_topologies.m to create data file AllSerParGenRxnSets.mat that contains all strictly serial and strictly parallel topologies');
 end
 
-TopoRelation = 'parallel'; % 'parallel' or 'serial';
+TopoRelation = 'serial'; % 'parallel' or 'serial';
 
 % 2. Specify what to do
 IFGENPARAMS = false; % generate new parameters or use previously generated ones?
@@ -75,7 +75,7 @@ DistrType = 'Exp0';
 DistrParam  = [0.25 , 1]; % 25% probability of having no edge, parameter of the exponential is 1
 
 % Precision threshold:
-MutTol = 1e-5; % mutational effects with absolute value below this threshold are considered to be zero
+NumTol = 1e-5; % mutational effects with absolute value below this threshold are considered to be zero
 EpsTol = 1e-2; % epsilon values close to zero and 1 are evaluated with this tolerance
 
 nMut = size(mutMat,1 );
@@ -231,7 +231,7 @@ if IFCALCULATE
                 VmMat(MutRxn(1,2),MutRxn(1,1)) = VmMat(MutRxn(1,1),MutRxn(1,2)) / KeqMat(MutRxn(1,1),MutRxn(1,2));
                 dyA = get_effective_rate( VmMat , KeqMat ) / yWT - 1;
                 
-                if abs(dyA) < MutTol
+                if abs(dyA) < NumTol
                     continue;
                 end
                 
@@ -241,7 +241,7 @@ if IFCALCULATE
                 VmMat(MutRxn(2,2),MutRxn(2,1)) = VmMat(MutRxn(2,1),MutRxn(2,2)) / KeqMat(MutRxn(2,1),MutRxn(2,2));
                 dyB = get_effective_rate( VmMat , KeqMat ) / yWT - 1;
                 
-                if abs(dyB) < MutTol
+                if abs(dyB) < NumTol
                     continue;
                 end
                 
@@ -298,25 +298,35 @@ end
 
 %%% Plot histrogram of fixed point locations
 if strcmp(TopoRelation, 'parallel')
-    fprintf('There are %d (%.1g%%) cases with eps y > 0 and %d (%.1g%%) cases with eps y >= 1\n',...
-        nnz(eps > EpsTol ), nnz(eps > EpsTol )/nnz( ~isnan(eps) ) * 100,...
-        nnz(eps >= 1-EpsTol ), nnz(eps >= 1-EpsTol )/nnz( ~isnan(eps) )*100  );
-    
+    fprintf('There are %d (%.1f%%) cases with eps y > %.2g and %d (%.1f%%) cases with eps y >= %.2g\n',...
+        nnz(eps > EpsTol ), nnz(eps > EpsTol )/nnz( ~isnan(eps) ) * 100, EpsTol, ...
+        nnz(eps >= 1-EpsTol ), nnz(eps >= 1-EpsTol )/nnz( ~isnan(eps) )*100 , 1-EpsTol );
+
+        fprintf('There are %d (%.1f%%) cases with eps y > 0 and %d (%.1f%%) cases with eps y >= 1 (with %.2g tolerance)\n',...
+        nnz(eps > NumTol ), nnz(eps > NumTol )/nnz( ~isnan(eps) ) * 100, ...
+        nnz(eps >= 1-NumTol ), nnz(eps >= 1-NumTol )/nnz( ~isnan(eps) )*100 , NumTol );
+
 elseif strcmp(TopoRelation, 'serial')
-    fprintf('There are %d (%.1g%%) cases with eps y < 1 and %d (%.1g%%) cases with eps y <= 0\n',...
-        nnz(eps < 1 - EpsTol ), nnz(eps < 1-EpsTol )/nnz( ~isnan(eps) ) * 100,...
-        nnz(eps <= EpsTol ), nnz(eps <= EpsTol )/nnz( ~isnan(eps) )*100  );
+    fprintf('There are %d (%.1f%%) cases with eps y < %.2g and %d (%.1f%%) cases with eps y <= %.2g \n',...
+        nnz(eps < 1 - EpsTol ), nnz(eps < 1-EpsTol )/nnz( ~isnan(eps) ) * 100, 1-EpsTol,...
+        nnz(eps <= EpsTol ), nnz(eps <= EpsTol )/nnz( ~isnan(eps) )*100, EpsTol  );
+
+    fprintf('There are %d (%.1f%%) cases with eps y < 1 and %d (%.1f%%) cases with eps y <= 0 (with %.2g tolerance)\n',...
+        nnz(eps < 1 - NumTol ), nnz(eps < 1-NumTol )/nnz( ~isnan(eps) ) * 100,...
+        nnz(eps <= NumTol ), nnz(eps <= NumTol )/nnz( ~isnan(eps) )*100, NumTol  );
 end
 
 fprintf('Only cases between 0 and 1 are plotted\n');
 
 X = (1:Params.nGT)';
-EpsCnt = nan( Params.nGT , nMut ); % # of cases with 0 < eps < 1
+EpsCnt = nan( Params.nGT , nMut ); % # of cases with EpsTol < eps < 1-EpsTol
+EpsCnt0 = nan( Params.nGT , nMut ); % # of cases with 0 < eps < 1
 TotCnt = nan( Params.nGT , nMut ); % total number of cases where epistasis could be computed
 
 for iMut = 1:nMut    
     for iGT = 1:Params.nGT
-        EpsCnt( iGT, iMut) = nnz( eps(:,iMut,iGT) > EpsTol & eps(:,iMut,iGT) < 1 - EpsTol );        
+        EpsCnt( iGT, iMut) = nnz( eps(:,iMut,iGT) > EpsTol & eps(:,iMut,iGT) < 1 - EpsTol );
+        EpsCnt0( iGT, iMut) = nnz( eps(:,iMut,iGT) > NumTol & eps(:,iMut,iGT) < 1 - NumTol );
         TotCnt(iGT, iMut) = nnz( ~isnan(eps(:,iMut,iGT)) );
     end
 end
@@ -373,8 +383,12 @@ for iMut = 1:nMut
     subplot('Position', [fdim.spxvec(ix) fdim.spyvec(iy) fdim.spwr fdim.sphr]),
     hold on, box on;
     set(gca, 'FontName', 'Helvetica', 'FontSize', fdim.tickfs, 'Layer', 'top');    
-              
-    bar(X,EpsCnt(:,iMut)./TotCnt(:,iMut), 0.9, 'FaceColor', 0.4*[1 1 1], 'EdgeColor', 'none', 'ShowBaseLine', 'off');
+    
+    Y = EpsCnt0(:,iMut)./TotCnt(:,iMut);
+    bar(X,Y, 0.9, 'FaceColor', 0.8*[1 1 1], 'EdgeColor', 'none', 'ShowBaseLine', 'off');
+
+    Y = EpsCnt(:,iMut)./TotCnt(:,iMut);
+    bar(X,Y, 0.9, 'FaceColor', 0.4*[1 1 1], 'EdgeColor', 'none', 'ShowBaseLine', 'off');
                 
     set(gca, 'XLim', [0.25, Params.nGT+0.75], 'XTick', 1:Params.nGT);
     set(gca, 'YLim', Ymax*[-0.05 1.05]);
@@ -393,7 +407,7 @@ for iMut = 1:nMut
         set(gca, 'YTickLabel', {});
     else
         if iy == 2
-            ylabel('Fraction of sampled modules with 0 < \epsilon y_\mu < 1', 'FontSize', fdim.labelfs, 'FontName', 'Helvetica');
+            ylabel('Fraction of sampled modules with \gamma < \epsilon y_\mu < 1-\gamma', 'FontSize', fdim.labelfs, 'FontName', 'Helvetica');
         end
     end
         
@@ -501,3 +515,5 @@ if strcmp(TopoRelation, 'serial')
     
     clear fdim iMut i1 X Y cc Ymax;
 end
+
+
